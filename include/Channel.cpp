@@ -1,5 +1,6 @@
 #include "Channel.h"
 #include "EventLoop.h"
+#include "Logger.h"
 
 #include <sys/epoll.h>
 
@@ -9,7 +10,7 @@ const int Channel::kWriteEvent = EPOLLOUT;          // 写事件
 
 // EventLoop: ChannelList Poller
 Channel::Channel(EventLoop *loop, int fd)
-    : loop_(loop), fd_(fd), events_(0), revents_(0), index_(-1), tied_(false)
+    : loop_(loop), fd_(fd), events_(0), revents_(0), index_(-1), isTied_(false)
 {
 }
 
@@ -74,7 +75,7 @@ void Channel::handleEventWithGuard(Timestamp receiveTime)
     {
         if (readCallback_)
         {
-            readCallback_();
+            readCallback_(receiveTime);
         }
     }
     // 写
