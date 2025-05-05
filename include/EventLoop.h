@@ -1,14 +1,14 @@
 #pragma once
 
-#include "noncopyable.h"
-#include "Timestamp.h"
 #include "CurrentThread.h"
+#include "Timestamp.h"
+#include "noncopyable.h"
 
-#include <functional>
-#include <vector>
 #include <atomic>
+#include <functional>
 #include <memory>
 #include <mutex>
+#include <vector>
 
 class Channel;
 class Poller;
@@ -45,7 +45,7 @@ public:
     // EventLoop => Poller
     void updateChannel(Channel *channel);
     void removeChannel(Channel *channel);
-    void hasChannel(Channel *channel);
+    bool hasChannel(Channel *channel);
 
     // 判断EventLoop对象是否在自己的线程中
     bool isInLoopThread() const { return threadId_ == CurrentThread::tid(); }

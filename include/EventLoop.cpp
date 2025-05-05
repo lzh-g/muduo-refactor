@@ -1,13 +1,13 @@
 #include "EventLoop.h"
-#include "Logger.h"
 #include "Channel.h"
+#include "Logger.h"
 #include "Poller.h"
 
+#include <errno.h>
+#include <fcntl.h>
+#include <memory>
 #include <sys/eventfd.h>
 #include <unistd.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <memory>
 
 // one thread one loop 防止一个线程创建多个EventLoop
 __thread EventLoop *t_loopInThisThread = nullptr;
@@ -23,11 +23,11 @@ int createEventfd()
     {
         LOG_FATAL("eventfd error: %d\n", errno);
     }
-    return evtfd;
+    return evfd;
 }
 
 EventLoop::EventLoop()
-    : looping_(false), quit_(false), callingPendingFunctors_(false), poller_(Poller::newDefaultPoller(this)), wakeupFd_(createEventfd()), wakeupChannel_(new Channel(this, wakeupFd_))
+    : looping_(false), quit_(false), callingPendingFunctors_(false), threadId_(CurrentThread::tid()), poller_(Poller::newDefaultPoller(this)), wakeupFd_(createEventfd()), wakeupChannel_(new Channel(this, wakeupFd_))
 {
     LOG_DEBUG("EventLoop created %p in thread %d\n", this, threadId_);
     if (t_loopInThisThread)
@@ -58,7 +58,7 @@ void EventLoop::loop()
     while (!quit)
     {
         activeChannels_.clear();
-        pollReturnTime_ = poller_->poll(kPollTimeMs, activeChannels_);
+        pollReturnTime_ = poller_->poll(kPollTimeMs, &activeChannels_);
         for (Channel *channel : activeChannels_)
         {
             // 通知channel处理相应事件
@@ -150,7 +150,7 @@ void EventLoop::removeChannel(Channel *channel)
     poller_->removeChannel(channel);
 }
 
-void EventLoop::hasChannel(Channel *channel)
+bool EventLoop::hasChannel(Channel *channel)
 {
     return poller_->hasChannel(channel);
 }
